@@ -3,6 +3,7 @@
 #include <queue>
 #include <stack>
 #include <fstream>
+#include <cmath>
 
 using namespace std;
 
@@ -178,4 +179,60 @@ void BST::graficarGraphviz(const string& filename) const {
 
     file << "}\n";
     file.close();
+}
+
+int BST::bstToVine(Node* grand) {
+    int count = 0;
+    Node* tmp = grand->right;
+
+    while (tmp != nullptr) {
+        if (tmp->left != nullptr) {
+            Node* old = tmp;
+            tmp = tmp->left;
+            old->left = tmp->right;
+            tmp->right = old;
+            grand->right = tmp;
+        } else {
+            count++;
+            grand = tmp;
+            tmp = tmp->right;
+        }
+    }
+    return count;
+}
+
+void BST::compress(Node* grand, int m) {
+    Node* tmp = grand->right;
+    for (int i = 0; i < m; i++) {
+        Node* old = tmp;
+        tmp = tmp->right;
+        grand->right = tmp;
+        old->right = tmp->left;
+        tmp->left = old;
+        grand = tmp;
+        tmp = tmp->right;
+    }
+}
+
+void BST::balance() {
+    if (root == nullptr) return;
+
+    Node* grand = new Node(0); 
+    grand->right = root;
+
+    int n = bstToVine(grand);
+
+
+    int h = std::log2(n + 1); 
+    int m = std::pow(2, h) - 1; 
+
+    compress(grand, n - m);
+    
+    while (m > 1) {
+        m = m / 2;
+        compress(grand, m);
+    }
+
+    root = grand->right;
+    delete grand;
 }
