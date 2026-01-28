@@ -14,6 +14,10 @@ private:
     void inorder(Node* node) const;
     // Graphviz
     void exportDOT(Node* node, std::ofstream& file) const;
+
+    int bstToVine(Node* grand);
+    void compress(Node* grand, int m);
+
 public:
     BST();
     void insert(int key);
@@ -23,6 +27,8 @@ public:
     void BFS();
     void DFS();
     void graficarGraphviz(const std::string& filename) const;
+
+    void balance();
 };
 
 #endif
