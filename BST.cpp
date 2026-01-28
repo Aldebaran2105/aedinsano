@@ -4,6 +4,7 @@
 #include <stack>
 #include <fstream>
 #include <cmath>
+#include <algorithm>
 
 using namespace std;
 
@@ -187,6 +188,7 @@ int BST::bstToVine(Node* grand) {
 
     while (tmp != nullptr) {
         if (tmp->left != nullptr) {
+            // Rotación derecha
             Node* old = tmp;
             tmp = tmp->left;
             old->left = tmp->right;
@@ -203,28 +205,46 @@ int BST::bstToVine(Node* grand) {
 
 void BST::compress(Node* grand, int m) {
     Node* tmp = grand->right;
+    
     for (int i = 0; i < m; i++) {
+        if (tmp == nullptr || tmp->right == nullptr) break;
+        
         Node* old = tmp;
         tmp = tmp->right;
+        
         grand->right = tmp;
         old->right = tmp->left;
         tmp->left = old;
+        
         grand = tmp;
         tmp = tmp->right;
     }
 }
 
+int updateHeightsRecursive(Node* node) {
+    if (!node) return 0;
+    int lh = updateHeightsRecursive(node->left);
+    int rh = updateHeightsRecursive(node->right);
+    node->height = 1 + std::max(lh, rh);
+    return node->height;
+}
+
 void BST::balance() {
     if (root == nullptr) return;
 
-    Node* grand = new Node(0); 
+    Node* grand = new Node(0);
     grand->right = root;
 
     int n = bstToVine(grand);
 
-
-    int h = std::log2(n + 1); 
-    int m = std::pow(2, h) - 1; 
+    // h = log2(n + 1)
+    int h = 0;
+    while ((1 << (h + 1)) <= (n + 1)) {
+        h++;
+    }
+    
+    // m = 2^h - 1
+    int m = (1 << h) - 1;
 
     compress(grand, n - m);
     
@@ -235,4 +255,6 @@ void BST::balance() {
 
     root = grand->right;
     delete grand;
+
+    updateHeightsRecursive(root);
 }
