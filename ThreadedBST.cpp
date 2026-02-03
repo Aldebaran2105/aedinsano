@@ -2,7 +2,6 @@
 
 using namespace std;
 
-
 void ThreadedBST::insert(int key) {
     root = insert(root, key);
 }
@@ -16,41 +15,45 @@ Node* ThreadedBST::insert(Node* node, int key) {
         return new Node(key);
     }
 
-    Node* parent = nullptr;
-    Node* curr = node;
+    Node* actual = node;
+    Node* padre = nullptr;
 
-    while (curr != nullptr) {
-        if (key == curr->key) return node;
+    while (actual != nullptr) {
+        if (key == actual->key) {
+            return node;
+        }
         
-        parent = curr;
-        
-        if (key < curr->key) {
-            if (!curr->lthread)
-                curr = curr->left;
-            else
+        padre = actual;
+
+        if (key < actual->key) {
+            if (actual->lthread == false) {
+                actual = actual->left;
+            } else {
                 break;
-        } 
-        else {
-            if (!curr->rthread)
-                curr = curr->right;
-            else
+            }
+        } else {
+            if (actual->rthread == false) {
+                actual = actual->right;
+            } else {
                 break;
+            }
         }
     }
 
-    Node* newNode = new Node(key);
+    Node* nuevo = new Node(key);
 
-    if (key < parent->key) {
+    if (key < padre->key) {
+        nuevo->left = padre->left;
+        nuevo->right = padre;
         
-        newNode->left = parent->left; 
-        newNode->right = parent;      
-        parent->left = newNode;
-        parent->lthread = false;
+        padre->left = nuevo;
+        padre->lthread = false;
     } else {
-        newNode->left = parent;        
-        newNode->right = parent->right;
-        parent->right = newNode;
-        parent->rthread = false;
+        nuevo->left = padre;
+        nuevo->right = padre->right;
+        
+        padre->right = nuevo;
+        padre->rthread = false;
     }
 
     return node;
@@ -59,21 +62,23 @@ Node* ThreadedBST::insert(Node* node, int key) {
 void ThreadedBST::inorder() const {
     if (root == nullptr) return;
 
-    Node* curr = root;
+    Node* actual = root;
 
-    while (!curr->lthread)
-        curr = curr->left;
+    while (actual->lthread == false) {
+        actual = actual->left;
+    }
 
-    while (curr != nullptr) {
-        cout << curr->key << " ";
+    while (actual != nullptr) {
+        cout << actual->key << " ";
 
-        if (curr->rthread) {
-            curr = curr->right;
-        } else {
-            curr = curr->right;
-            if (curr == nullptr) break;
-            while (!curr->lthread)
-                curr = curr->left;
+        if (actual->rthread == true) {
+            actual = actual->right;
+        } 
+        else {
+            actual = actual->right;
+            while (actual != nullptr && actual->lthread == false) {
+                actual = actual->left;
+            }
         }
     }
     cout << endl;
@@ -81,92 +86,105 @@ void ThreadedBST::inorder() const {
 
 Node* ThreadedBST::findMin(Node* node) const {
     if (node == nullptr) return nullptr;
-    while (!node->lthread) {
+    while (node->lthread == false) {
         node = node->left;
     }
     return node;
 }
 
 Node* ThreadedBST::remove(Node* node, int key) {
-    Node* parent = nullptr;
-    Node* curr = node;
-    bool found = false;
+    Node* padre = nullptr;
+    Node* actual = node;
+    bool encontrado = false;
 
-    while (curr != nullptr) {
-        if (key == curr->key) {
-            found = true;
+    while (actual != nullptr) {
+        if (key == actual->key) {
+            encontrado = true;
             break;
         }
-        parent = curr;
-        if (key < curr->key) {
-            if (!curr->lthread) curr = curr->left;
+        
+        padre = actual;
+        
+        if (key < actual->key) {
+            if (actual->lthread == false) actual = actual->left;
             else break;
         } else {
-            if (!curr->rthread) curr = curr->right;
+            if (actual->rthread == false) actual = actual->right;
             else break;
         }
     }
 
-    if (!found) return node;
+    if (!encontrado) return node;
 
-    if (!curr->lthread && !curr->rthread) {
-        Node* succ = curr->right;
-        while (!succ->lthread) succ = succ->left;
+    if (actual->lthread == false && actual->rthread == false) {
+        Node* sucesor = actual->right;
+        while (sucesor->lthread == false) {
+            sucesor = sucesor->left;
+        }
         
-        int val = succ->key;
-        remove(node, succ->key); 
-        curr->key = val;
+        int valSucesor = sucesor->key;
+        remove(root, sucesor->key);
+        actual->key = valSucesor;
         return node;
     }
 
-    Node* child = nullptr;
-    if (!curr->lthread) child = curr->left;
-    else if (!curr->rthread) child = curr->right;
-    else child = nullptr;
+    Node* hijo = nullptr;
+    
+    if (actual->lthread == false) {
+        hijo = actual->left;
+    } else if (actual->rthread == false) {
+        hijo = actual->right;
+    } else {
+        hijo = nullptr;
+    }
 
-    if (child == nullptr) {
-        if (parent == nullptr) {
-            delete curr;
+    if (hijo == nullptr) {
+        if (padre == nullptr) {
+            delete actual;
             return nullptr;
         }
         
-        if (curr == parent->left) {
-            parent->lthread = true;
-            parent->left = curr->left;
+        if (actual == padre->left) {
+            padre->lthread = true;
+            padre->left = actual->left;
         } else {
-            parent->rthread = true;
-            parent->right = curr->right;
+            padre->rthread = true;
+            padre->right = actual->right;
         }
-        delete curr;
+        delete actual;
     }
     else {
-        if (!curr->lthread) {
-             Node* temp = curr->left;
-             while (!temp->rthread) temp = temp->right;
-             temp->right = curr->right;
-             
-             if (parent == nullptr) {
-                 delete curr;
-                 return child;
-             }
-             
-             if (curr == parent->left) parent->left = child;
-             else parent->right = child;
-        } 
-        else {
-             Node* temp = curr->right;
-             while (!temp->lthread) temp = temp->left;
-             temp->left = curr->left;
+        if (actual->lthread == false) { 
+            Node* temp = actual->left;
+            while (temp->rthread == false) {
+                temp = temp->right;
+            }
+            temp->right = actual->right;
+            
+            if (padre == nullptr) {
+                delete actual;
+                return hijo;
+            }
+            
+            if (actual == padre->left) padre->left = hijo;
+            else padre->right = hijo;
+            
+        } else { 
+            Node* temp = actual->right;
+            while (temp->lthread == false) {
+                temp = temp->left;
+            }
+            temp->left = actual->left;
 
-             if (parent == nullptr) {
-                 delete curr;
-                 return child;
-             }
-
-             if (curr == parent->left) parent->left = child;
-             else parent->right = child;
+            if (padre == nullptr) {
+                delete actual;
+                return hijo;
+            }
+            
+            if (actual == padre->left) padre->left = hijo;
+            else padre->right = hijo;
         }
-        delete curr;
+        delete actual;
     }
 
     return node;
