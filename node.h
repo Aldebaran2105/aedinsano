@@ -1,15 +1,15 @@
 #ifndef NODE_H
 #define NODE_H
 
+  
 struct Node {
     int key;
-    int height;
-    Node* left;
-    Node* right;
-    Node(int k);
-};
+    Node* left = nullptr;
+    Node* right = nullptr;
+    bool lthread = true;  // true si left apunta al predecesor en inorden
+    bool rthread = true; // true si right apunta al sucesor en inorden
 
-int h(Node* n);
-void updateHeight(Node* n);
+    Node(int val) : key(val) {}
+};
 
 #endif
